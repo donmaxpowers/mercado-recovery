@@ -1,0 +1,1517 @@
+{
+  "address": "FjS73fLCiuyub4FNRfP7ztKdXBcaBDM6ai2CQdhZUGBP",
+  "metadata": {
+    "name": "mercado",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "MERCADO MIGORY trading program (stage 1: fixed-price listings and buys)"
+  },
+  "instructions": [
+    {
+      "name": "admin_update",
+      "docs": [
+        "Admin (delayed route): fee wallet, collections, creators, royalty, keys."
+      ],
+      "discriminator": [
+        123,
+        245,
+        240,
+        247,
+        4,
+        240,
+        221,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "update",
+          "type": {
+            "defined": {
+              "name": "AdminChanges"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "buy",
+      "docs": [
+        "Buy a listed item. Remaining accounts: the royalty creators, writable, in the plugin's order."
+      ],
+      "discriminator": [
+        102,
+        6,
+        61,
+        18,
+        1,
+        218,
+        235,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "seller",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fee_wallet",
+          "writable": true
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_price",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "cancel_listing",
+      "docs": [
+        "The seller cancels. Never blocked by pause, stages or collection removal."
+      ],
+      "discriminator": [
+        41,
+        183,
+        50,
+        232,
+        230,
+        233,
+        157,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The seller (cancel) or anyone (close stale). Pays any Core rent changes."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "seller",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_stale_listing",
+      "docs": [
+        "Anyone closes a listing whose item moved or lost Mercado's delegate. Always thaws first."
+      ],
+      "discriminator": [
+        120,
+        38,
+        229,
+        87,
+        16,
+        1,
+        54,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The seller (cancel) or anyone (close stale). Pays any Core rent changes."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "seller",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "Creates Config. Only the program's upgrade authority can call it."
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "docs": [
+            "Only the program's upgrade authority can create Config, so nobody can front-run it."
+          ],
+          "address": "FjS73fLCiuyub4FNRfP7ztKdXBcaBDM6ai2CQdhZUGBP"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InitArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "docs": [
+        "List an item at a fixed price. Freezes it in the seller's wallet."
+      ],
+      "discriminator": [
+        54,
+        174,
+        193,
+        67,
+        17,
+        41,
+        132,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "seller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lock",
+          "docs": [
+            "Never closed; its one-time rent is paid by the first holder ever to lock the item."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "open_to_swaps",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_fees",
+      "docs": [
+        "Daily key or admin: the fee and the \"$50 line\" together, within the caps."
+      ],
+      "discriminator": [
+        137,
+        178,
+        49,
+        58,
+        0,
+        245,
+        242,
+        190
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "line_lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_paused",
+      "docs": [
+        "Pause: daily key or admin. Unpause: admin."
+      ],
+      "discriminator": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_stages",
+      "docs": [
+        "Switch stages off (daily key or admin) or on (admin)."
+      ],
+      "discriminator": [
+        113,
+        189,
+        12,
+        55,
+        195,
+        204,
+        225,
+        77
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "stages",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Listing",
+      "discriminator": [
+        218,
+        32,
+        50,
+        73,
+        43,
+        134,
+        26,
+        58
+      ]
+    },
+    {
+      "name": "Lock",
+      "discriminator": [
+        8,
+        255,
+        36,
+        202,
+        210,
+        22,
+        57,
+        137
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ConfigChanged",
+      "discriminator": [
+        147,
+        25,
+        86,
+        98,
+        98,
+        77,
+        78,
+        192
+      ]
+    },
+    {
+      "name": "Listed",
+      "discriminator": [
+        243,
+        173,
+        136,
+        195,
+        125,
+        241,
+        12,
+        99
+      ]
+    },
+    {
+      "name": "ListingClosed",
+      "discriminator": [
+        86,
+        219,
+        253,
+        196,
+        184,
+        194,
+        176,
+        78
+      ]
+    },
+    {
+      "name": "Sold",
+      "discriminator": [
+        205,
+        203,
+        210,
+        202,
+        96,
+        11,
+        192,
+        10
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Paused",
+      "msg": "Trading is paused"
+    },
+    {
+      "code": 6001,
+      "name": "StageClosed",
+      "msg": "This stage is not open"
+    },
+    {
+      "code": 6002,
+      "name": "Unauthorized",
+      "msg": "Signer is not allowed to do this"
+    },
+    {
+      "code": 6003,
+      "name": "FeeOutsideCaps",
+      "msg": "Fee settings are outside the caps (fee at most 0.05 SOL, line at least 20 times the fee)"
+    },
+    {
+      "code": 6004,
+      "name": "TooMany",
+      "msg": "Too many collections or creators"
+    },
+    {
+      "code": 6005,
+      "name": "PriceTooLow",
+      "msg": "Price is below the 0.01 SOL minimum"
+    },
+    {
+      "code": 6006,
+      "name": "PriceAboveMax",
+      "msg": "Price is higher than the buyer's maximum"
+    },
+    {
+      "code": 6007,
+      "name": "NotCoreAsset",
+      "msg": "Not a Metaplex Core asset"
+    },
+    {
+      "code": 6008,
+      "name": "NotCoreCollection",
+      "msg": "Not a Metaplex Core collection"
+    },
+    {
+      "code": 6009,
+      "name": "CollectionNotAllowed",
+      "msg": "This collection can't trade on Mercado"
+    },
+    {
+      "code": 6010,
+      "name": "WrongCollection",
+      "msg": "The item doesn't belong to this collection"
+    },
+    {
+      "code": 6011,
+      "name": "NotOwner",
+      "msg": "The signer doesn't own this item"
+    },
+    {
+      "code": 6012,
+      "name": "UnsupportedPlugin",
+      "msg": "The item carries a plugin Mercado doesn't support"
+    },
+    {
+      "code": 6013,
+      "name": "ExternalPlugin",
+      "msg": "The item or collection has an external plugin"
+    },
+    {
+      "code": 6014,
+      "name": "DelegateHeldElsewhere",
+      "msg": "Someone else holds a delegate on this item (it may be listed elsewhere)"
+    },
+    {
+      "code": 6015,
+      "name": "AlreadyFrozen",
+      "msg": "The item is already frozen"
+    },
+    {
+      "code": 6016,
+      "name": "ItemInUse",
+      "msg": "The item is already used by another order"
+    },
+    {
+      "code": 6017,
+      "name": "WrongOrder",
+      "msg": "The item's lock doesn't belong to this order"
+    },
+    {
+      "code": 6018,
+      "name": "SameWallet",
+      "msg": "Buyer and seller must be different wallets"
+    },
+    {
+      "code": 6019,
+      "name": "ListingNotStale",
+      "msg": "This listing is still valid and can't be closed by others"
+    },
+    {
+      "code": 6020,
+      "name": "RoyaltyMismatch",
+      "msg": "Royalties don't match MIGORY's published settings"
+    },
+    {
+      "code": 6021,
+      "name": "CreatorAccountsMismatch",
+      "msg": "Creator accounts don't match the royalty plugin"
+    },
+    {
+      "code": 6022,
+      "name": "ListingNotSellable",
+      "msg": "The listing has lost Mercado's delegates; it can only be closed"
+    },
+    {
+      "code": 6023,
+      "name": "SwapsClosed",
+      "msg": "Swaps are not open yet"
+    },
+    {
+      "code": 6024,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6025,
+      "name": "WrongAccount",
+      "msg": "Wrong account passed"
+    }
+  ],
+  "types": [
+    {
+      "name": "AdminChanges",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "fee_wallet",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "collections",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "creators",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "royalty_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "daily_key",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "admin",
+            "type": {
+              "option": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "authority_bump",
+            "docs": [
+              "Bump of the program authority PDA (`[\"authority\"]`) that holds Mercado's Freeze and Transfer Delegates."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "daily_key",
+            "docs": [
+              "MIGORY's daily key: fee updates within the caps, pause, switching stages off. Immediate."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "The delayed route: on mainnet the Squads vault (24-hour time lock, only the backup key can approve).",
+              "Everything sensitive: fee wallet, collections, creators, keys, switching stages on, unpausing."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_lamports",
+            "docs": [
+              "The \"$1\" fee, in lamports."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "line_lamports",
+            "docs": [
+              "The \"$50 line\": sales priced below it pay no fee."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "stages",
+            "type": "u8"
+          },
+          {
+            "name": "collections",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "creators",
+            "docs": [
+              "MIGORY's published creators. Royalty plugins naming anyone else are refused."
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "royalty_bps",
+            "docs": [
+              "Required total royalty, in basis points (500 = 5%)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "next_listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "next_offer_id",
+            "type": "u64"
+          },
+          {
+            "name": "next_swap_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "what",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "daily_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "line_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "collections",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "creators",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "royalty_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Listed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "agreed_fee",
+            "type": "u64"
+          },
+          {
+            "name": "open_to_swaps",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Listing",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "listing_id",
+            "docs": [
+              "Taken from Config; never reused."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "collection",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "open_to_swaps",
+            "type": "bool"
+          },
+          {
+            "name": "agreed_fee",
+            "docs": [
+              "The fee the seller agreed to when listing (0 if under the line). A sale charges the lower of this and today's."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ListingClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "stale",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Lock",
+      "docs": [
+        "Per-item record, never closed, so The Arena can see every listing, however short (design: The Arena)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "times_locked",
+            "docs": [
+              "Only ever goes up."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "active_kind",
+            "docs": [
+              "The order using the item right now (ORDER_NONE if free)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "active_id",
+            "type": "u64"
+          },
+          {
+            "name": "active_slot",
+            "docs": [
+              "Slot in `periods` of the active order's period."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "next_slot",
+            "docs": [
+              "Slot the next period will be written to (a ring of LOCK_PERIODS)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "periods",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "LockPeriod"
+                  }
+                },
+                8
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LockPeriod",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Owner of the item when it was locked."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "docs": [
+              "ORDER_LISTING or ORDER_SWAP (0 = unused slot)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "order_id",
+            "type": "u64"
+          },
+          {
+            "name": "opened_at",
+            "type": "i64"
+          },
+          {
+            "name": "closed_at",
+            "docs": [
+              "0 while still open."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "docs": [
+              "For swaps: the offer's expiry. The Arena treats the period as ended at expiry even if cleanup comes later."
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Sold",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "royalty",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "seller_received",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

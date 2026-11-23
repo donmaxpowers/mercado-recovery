@@ -1,0 +1,17 @@
+{
+  "name": "mercado-recovery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MERCADO MIGORY recovery tool: cancel your listings or close stale ones without mercado.migory.com.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@solana/kit": "8.6.0",
+    "@wallet-standard/app": "1.1.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
