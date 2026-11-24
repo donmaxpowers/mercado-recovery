@@ -484,11 +484,19 @@
       ],
       "args": [
         {
+          "name": "swap_id",
+          "type": "u64"
+        },
+        {
           "name": "n_collections",
           "type": "u8"
         },
         {
           "name": "fee_cap",
+          "type": "u64"
+        },
+        {
+          "name": "min_sol_on_top",
           "type": "u64"
         }
       ]
@@ -1179,6 +1187,10 @@
       ],
       "args": [
         {
+          "name": "swap_id",
+          "type": "u64"
+        },
+        {
           "name": "n_collections",
           "type": "u8"
         },
@@ -1729,6 +1741,12 @@
           }
         },
         {
+          "name": "listed_asset",
+          "docs": [
+            "listing that can never fill (stage 5 review)."
+          ]
+        },
+        {
           "name": "swap",
           "writable": true,
           "pda": {
@@ -1999,6 +2017,10 @@
         }
       ],
       "args": [
+        {
+          "name": "swap_id",
+          "type": "u64"
+        },
         {
           "name": "n_collections",
           "type": "u8"
@@ -2643,6 +2665,11 @@
       "code": 6049,
       "name": "NotForSale",
       "msg": "This listing is for swaps only; it has no price"
+    },
+    {
+      "code": 6050,
+      "name": "SwapChanged",
+      "msg": "This is not the swap offer you approved: it was replaced or changed"
     }
   ],
   "types": [
@@ -2671,12 +2698,6 @@
               "option": {
                 "vec": "pubkey"
               }
-            }
-          },
-          {
-            "name": "royalty_bps",
-            "type": {
-              "option": "u16"
             }
           },
           {
