@@ -4,9 +4,495 @@
     "name": "mercado",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "MERCADO MIGORY trading program (stage 1: fixed-price listings and buys)"
+    "description": "MERCADO MIGORY trading program (stages 1-3 and 5: listings, offers, family offers, swaps)"
   },
   "instructions": [
+    {
+      "name": "accept_family_offer",
+      "docs": [
+        "Stage 3: sell one item into a family offer, with its proof from the published snapshot."
+      ],
+      "discriminator": [
+        174,
+        92,
+        62,
+        68,
+        172,
+        39,
+        154,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "seller",
+          "docs": [
+            "The item's owner."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bidder",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "offer.bidder",
+                "account": "Offer"
+              },
+              {
+                "kind": "account",
+                "path": "offer.nonce",
+                "account": "Offer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "docs": [
+            "The seller's Mercado listing of this item, if it is listed: closed in the same transaction."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fee_wallet",
+          "writable": true
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "min_receive",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "accept_offer",
+      "docs": [
+        "The owner sells one item into an offer, receiving at least `min_receive`. A Mercado listing of the item is",
+        "closed in the same transaction. Remaining accounts: the royalty creators, writable, in the plugin's order."
+      ],
+      "discriminator": [
+        227,
+        82,
+        234,
+        131,
+        1,
+        18,
+        48,
+        2
+      ],
+      "accounts": [
+        {
+          "name": "seller",
+          "docs": [
+            "The item's owner."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bidder",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "offer.bidder",
+                "account": "Offer"
+              },
+              {
+                "kind": "account",
+                "path": "offer.nonce",
+                "account": "Offer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "docs": [
+            "The seller's Mercado listing of this item, if it is listed: closed in the same transaction."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fee_wallet",
+          "writable": true
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "min_receive",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "accept_swap",
+      "docs": [
+        "Stage 5: the lister accepts; items move both ways in one transaction."
+      ],
+      "discriminator": [
+        166,
+        173,
+        240,
+        207,
+        167,
+        11,
+        3,
+        20
+      ],
+      "accounts": [
+        {
+          "name": "lister",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "offerer",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "swap.listed_asset",
+                "account": "Swap"
+              }
+            ]
+          }
+        },
+        {
+          "name": "listed_asset",
+          "writable": true
+        },
+        {
+          "name": "listed_collection",
+          "writable": true
+        },
+        {
+          "name": "listed_lock",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "swap.listed_asset",
+                "account": "Swap"
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  119,
+                  97,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "swap.offerer",
+                "account": "Swap"
+              },
+              {
+                "kind": "account",
+                "path": "swap.nonce",
+                "account": "Swap"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fee_wallet",
+          "writable": true
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "n_collections",
+          "type": "u8"
+        },
+        {
+          "name": "fee_cap",
+          "type": "u64"
+        }
+      ]
+    },
     {
       "name": "admin_update",
       "docs": [
@@ -194,13 +680,17 @@
         {
           "name": "max_price",
           "type": "u64"
+        },
+        {
+          "name": "listing_id",
+          "type": "u64"
         }
       ]
     },
     {
       "name": "cancel_listing",
       "docs": [
-        "The seller cancels. Never blocked by pause, stages or collection removal."
+        "The seller cancels the listing `listing_id`. Never blocked by pause, stages or collection removal."
       ],
       "discriminator": [
         41,
@@ -328,12 +818,133 @@
           "address": "11111111111111111111111111111111"
         }
       ],
+      "args": [
+        {
+          "name": "listing_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "cancel_offer",
+      "docs": [
+        "The bidder takes back every unused lamport. Never blocked by pause, stages or collection removal."
+      ],
+      "discriminator": [
+        92,
+        203,
+        223,
+        40,
+        92,
+        89,
+        53,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The bidder (cancel) or anyone (after expiry)."
+          ],
+          "signer": true
+        },
+        {
+          "name": "bidder",
+          "writable": true
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "offer.bidder",
+                "account": "Offer"
+              },
+              {
+                "kind": "account",
+                "path": "offer.nonce",
+                "account": "Offer"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_expired_offer",
+      "docs": [
+        "Anyone closes an expired offer; the SOL and rent go only to the bidder."
+      ],
+      "discriminator": [
+        174,
+        202,
+        24,
+        79,
+        174,
+        99,
+        110,
+        236
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The bidder (cancel) or anyone (after expiry)."
+          ],
+          "signer": true
+        },
+        {
+          "name": "bidder",
+          "writable": true
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "offer.bidder",
+                "account": "Offer"
+              },
+              {
+                "kind": "account",
+                "path": "offer.nonce",
+                "account": "Offer"
+              }
+            ]
+          }
+        }
+      ],
       "args": []
     },
     {
       "name": "close_stale_listing",
       "docs": [
-        "Anyone closes a listing whose item moved or lost Mercado's delegate. Always thaws first."
+        "Anyone closes a listing that can't sell (item moved, or no longer frozen with both of Mercado's delegates)."
       ],
       "discriminator": [
         120,
@@ -462,6 +1073,120 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "end_swap",
+      "docs": [
+        "Stage 5: the offerer cancels, the lister declines, or anyone after expiry; refunds once, releases items."
+      ],
+      "discriminator": [
+        177,
+        184,
+        27,
+        193,
+        34,
+        13,
+        210,
+        145
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The offerer (cancel), the lister (decline), or anyone once the offer has expired. Pays any Core rent change."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "offerer",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  119,
+                  97,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "swap.offerer",
+                "account": "Swap"
+              },
+              {
+                "kind": "account",
+                "path": "swap.nonce",
+                "account": "Swap"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "n_collections",
+          "type": "u8"
+        },
+        {
+          "name": "indexes",
+          "type": "bytes"
+        }
+      ]
     },
     {
       "name": "initialize",
@@ -684,6 +1409,603 @@
         {
           "name": "open_to_swaps",
           "type": "bool"
+        },
+        {
+          "name": "min_receive",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "make_family_offer",
+      "docs": [
+        "Stage 3: bid `price` for each of 1 to 10 items of one family, pinned to this registry version's list."
+      ],
+      "discriminator": [
+        230,
+        212,
+        208,
+        125,
+        124,
+        41,
+        117,
+        184
+      ],
+      "accounts": [
+        {
+          "name": "bidder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              },
+              {
+                "kind": "arg",
+                "path": "nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "registry.version",
+                "account": "Registry"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collection"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
+        },
+        {
+          "name": "family",
+          "type": "u8"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "quantity",
+          "type": "u8"
+        },
+        {
+          "name": "expires_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "make_offer",
+      "docs": [
+        "Stage 2. Bid `price` SOL for each of `quantity` items: one item (kind 1, quantity 1) or any item of one",
+        "allowed collection (kind 2, 1 to 10). The SOL moves into the Offer; expiry at most 7 days away.",
+        "`nonce`: chosen by the bidder (random); fixes the Offer's address together with the bidder."
+      ],
+      "discriminator": [
+        214,
+        98,
+        97,
+        35,
+        59,
+        12,
+        44,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "bidder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "offer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              },
+              {
+                "kind": "arg",
+                "path": "nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "target"
+        },
+        {
+          "name": "collection"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
+        },
+        {
+          "name": "kind",
+          "type": "u8"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "quantity",
+          "type": "u8"
+        },
+        {
+          "name": "expires_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "make_swap_offer",
+      "docs": [
+        "Stage 5: offer 1 to MAX_SWAP_ITEMS items (remaining accounts), plus optional SOL, for one listing."
+      ],
+      "discriminator": [
+        208,
+        17,
+        46,
+        247,
+        48,
+        1,
+        65,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "offerer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "listing",
+          "docs": [
+            "The listing asked for: named by its item, and its ID must be the one the offerer saw."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "listing.asset",
+                "account": "Listing"
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  119,
+                  97,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "offerer"
+              },
+              {
+                "kind": "arg",
+                "path": "nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
+        },
+        {
+          "name": "listing_id",
+          "type": "u64"
+        },
+        {
+          "name": "n_collections",
+          "type": "u8"
+        },
+        {
+          "name": "n_items",
+          "type": "u8"
+        },
+        {
+          "name": "sol_on_top",
+          "type": "u64"
+        },
+        {
+          "name": "expires_at",
+          "type": "i64"
+        },
+        {
+          "name": "fee_cap",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "publish_registry",
+      "docs": [
+        "Stage 3, admin: publish one version of the family lists (one Merkle root per family). Never changed after."
+      ],
+      "discriminator": [
+        226,
+        117,
+        92,
+        177,
+        114,
+        66,
+        100,
+        95
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The admin (on mainnet the Squads vault, through the 24-hour delayed route). Pays the account's rent."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "version"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u32"
+        },
+        {
+          "name": "collection",
+          "type": "pubkey"
+        },
+        {
+          "name": "snapshot_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "families",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "FamilyRoot"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "release_swap_items",
+      "docs": [
+        "Stage 5, anyone: release more items of an ended swap offer; the account closes after the last."
+      ],
+      "discriminator": [
+        169,
+        25,
+        4,
+        58,
+        177,
+        193,
+        103,
+        71
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The offerer (cancel), the lister (decline), or anyone once the offer has expired. Pays any Core rent change."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "offerer",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "swap",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  119,
+                  97,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "swap.offerer",
+                "account": "Swap"
+              },
+              {
+                "kind": "account",
+                "path": "swap.nonce",
+                "account": "Swap"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "n_collections",
+          "type": "u8"
+        },
+        {
+          "name": "indexes",
+          "type": "bytes"
         }
       ]
     },
@@ -872,6 +2194,45 @@
         57,
         137
       ]
+    },
+    {
+      "name": "Offer",
+      "discriminator": [
+        215,
+        88,
+        60,
+        71,
+        170,
+        162,
+        73,
+        229
+      ]
+    },
+    {
+      "name": "Registry",
+      "discriminator": [
+        47,
+        174,
+        110,
+        246,
+        184,
+        182,
+        252,
+        218
+      ]
+    },
+    {
+      "name": "Swap",
+      "discriminator": [
+        53,
+        206,
+        146,
+        152,
+        44,
+        97,
+        120,
+        177
+      ]
     }
   ],
   "events": [
@@ -915,6 +2276,58 @@
       ]
     },
     {
+      "name": "OfferClosed",
+      "discriminator": [
+        237,
+        38,
+        102,
+        204,
+        165,
+        180,
+        177,
+        164
+      ]
+    },
+    {
+      "name": "OfferFilled",
+      "discriminator": [
+        173,
+        104,
+        95,
+        161,
+        144,
+        206,
+        72,
+        57
+      ]
+    },
+    {
+      "name": "OfferMade",
+      "discriminator": [
+        11,
+        5,
+        86,
+        210,
+        3,
+        4,
+        25,
+        154
+      ]
+    },
+    {
+      "name": "RegistryPublished",
+      "discriminator": [
+        41,
+        159,
+        192,
+        43,
+        137,
+        74,
+        89,
+        255
+      ]
+    },
+    {
       "name": "Sold",
       "discriminator": [
         205,
@@ -925,6 +2338,58 @@
         11,
         192,
         10
+      ]
+    },
+    {
+      "name": "SwapAccepted",
+      "discriminator": [
+        226,
+        86,
+        141,
+        186,
+        157,
+        59,
+        108,
+        143
+      ]
+    },
+    {
+      "name": "SwapEnded",
+      "discriminator": [
+        220,
+        133,
+        220,
+        151,
+        83,
+        182,
+        220,
+        1
+      ]
+    },
+    {
+      "name": "SwapItemsReleased",
+      "discriminator": [
+        124,
+        62,
+        212,
+        53,
+        9,
+        50,
+        8,
+        196
+      ]
+    },
+    {
+      "name": "SwapOffered",
+      "discriminator": [
+        71,
+        199,
+        205,
+        48,
+        243,
+        92,
+        89,
+        115
       ]
     }
   ],
@@ -1058,6 +2523,126 @@
       "code": 6025,
       "name": "WrongAccount",
       "msg": "Wrong account passed"
+    },
+    {
+      "code": 6026,
+      "name": "BadExpiry",
+      "msg": "Offers must last between 1 second and 7 days"
+    },
+    {
+      "code": 6027,
+      "name": "BadQuantity",
+      "msg": "Offer quantity must be 1 for one item, and 1 to 10 for any MIGORY or any egg"
+    },
+    {
+      "code": 6028,
+      "name": "BadOfferKind",
+      "msg": "Unknown offer kind"
+    },
+    {
+      "code": 6029,
+      "name": "OfferExpired",
+      "msg": "This offer has expired"
+    },
+    {
+      "code": 6030,
+      "name": "OfferNotExpired",
+      "msg": "This offer has not expired yet"
+    },
+    {
+      "code": 6031,
+      "name": "OfferFilled",
+      "msg": "This offer is already filled"
+    },
+    {
+      "code": 6032,
+      "name": "NotOfferTarget",
+      "msg": "This item isn't what the offer asks for"
+    },
+    {
+      "code": 6033,
+      "name": "AlreadyFilled",
+      "msg": "This item already filled this offer"
+    },
+    {
+      "code": 6034,
+      "name": "BelowMinimum",
+      "msg": "You would receive less than your minimum"
+    },
+    {
+      "code": 6035,
+      "name": "OwnItem",
+      "msg": "You can't bid on your own item"
+    },
+    {
+      "code": 6036,
+      "name": "FamilyNotInRegistry",
+      "msg": "That family isn't in this registry version"
+    },
+    {
+      "code": 6037,
+      "name": "BadRegistry",
+      "msg": "The registry is malformed (duplicate or empty family, or too many)"
+    },
+    {
+      "code": 6038,
+      "name": "NotInFamily",
+      "msg": "This item isn't on the family's published list"
+    },
+    {
+      "code": 6039,
+      "name": "ProofRequired",
+      "msg": "A family offer needs the item's proof from the published list"
+    },
+    {
+      "code": 6040,
+      "name": "ProofTooLong",
+      "msg": "The proof is too long"
+    },
+    {
+      "code": 6041,
+      "name": "ListingChanged",
+      "msg": "The listing changed since the offer was made (sold, cancelled or relisted)"
+    },
+    {
+      "code": 6042,
+      "name": "NotOpenToSwaps",
+      "msg": "This listing isn't open to swaps"
+    },
+    {
+      "code": 6043,
+      "name": "SwapItemCount",
+      "msg": "A swap offer needs 1 to the maximum number of items"
+    },
+    {
+      "code": 6044,
+      "name": "FeeAboveCap",
+      "msg": "Today's fee is above the fee you agreed to"
+    },
+    {
+      "code": 6045,
+      "name": "DuplicateItem",
+      "msg": "The same item twice, or the item asked for, can't be offered"
+    },
+    {
+      "code": 6046,
+      "name": "SwapNotOpen",
+      "msg": "This swap offer is no longer open"
+    },
+    {
+      "code": 6047,
+      "name": "SwapNotEnded",
+      "msg": "This swap offer hasn't ended"
+    },
+    {
+      "code": 6048,
+      "name": "SwapItemNotHeld",
+      "msg": "An offered item is no longer held for this swap"
+    },
+    {
+      "code": 6049,
+      "name": "NotForSale",
+      "msg": "This listing is for swaps only; it has no price"
     }
   ],
   "types": [
@@ -1216,6 +2801,34 @@
       }
     },
     {
+      "name": "FamilyRoot",
+      "docs": [
+        "One family's list in a registry version: the Merkle root of its items, and how many there are."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "family",
+            "type": "u8"
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "count",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
       "name": "InitArgs",
       "type": {
         "kind": "struct",
@@ -1321,6 +2934,9 @@
           },
           {
             "name": "price",
+            "docs": [
+              "0 for a swaps-only listing (which can't be bought)."
+            ],
             "type": "u64"
           },
           {
@@ -1474,6 +3090,328 @@
       }
     },
     {
+      "name": "Offer",
+      "docs": [
+        "A bid in SOL (stage 2). The bid's SOL sits in this account, above its rent, until a fill pays a seller or the",
+        "bidder takes it back: the bidder can cancel at any time, and anyone can close it after expiry. Either way the SOL",
+        "and the rent only ever go to the bidder."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "offer_id",
+            "docs": [
+              "Taken from Config; never reused."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Chosen by the bidder's browser (random); with the bidder it fixes the Offer's address, so two people bidding at",
+              "the same moment never compete for the next Config number (review finding H-1, 23 November 2026)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bidder",
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "docs": [
+              "OFFER_ITEM or OFFER_COLLECTION."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "target",
+            "docs": [
+              "The item (OFFER_ITEM) or the collection (OFFER_COLLECTION)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "collection",
+            "docs": [
+              "The collection the item must belong to (for OFFER_ITEM, the item's collection when the offer was made)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "docs": [
+              "Price for each item, in lamports."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "quantity",
+            "type": "u8"
+          },
+          {
+            "name": "filled",
+            "type": "u8"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "docs": [
+              "A fill at or after this time is refused."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "registry_version",
+            "docs": [
+              "Stage 3 (family and trait offers): registry version, Merkle root and trait the offer is pinned to. Zero here."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "trait_key",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "filled_items",
+            "docs": [
+              "Items already bought, so the same item can never fill an offer twice. Space for `quantity` items is paid",
+              "up front by the bidder."
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OfferClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "offer_id",
+            "type": "u64"
+          },
+          {
+            "name": "bidder",
+            "type": "pubkey"
+          },
+          {
+            "name": "refunded",
+            "type": "u64"
+          },
+          {
+            "name": "filled",
+            "type": "u8"
+          },
+          {
+            "name": "expired",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OfferFilled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "offer_id",
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "bidder",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "royalty",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "seller_received",
+            "type": "u64"
+          },
+          {
+            "name": "filled",
+            "type": "u8"
+          },
+          {
+            "name": "listing_id",
+            "docs": [
+              "The seller's listing that closed with this fill, if the item was listed."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OfferMade",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "offer_id",
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "bidder",
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "type": "u8"
+          },
+          {
+            "name": "target",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "quantity",
+            "type": "u8"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Registry",
+      "docs": [
+        "Stage 3: one published version of the family lists (design: \"Offer on a family or a trait\", families only by",
+        "MIGORY's decision of 23 November 2026). Created once by the admin (on mainnet the 24-hour delayed route) and never",
+        "changed: a new list is a new version, and every family offer stays pinned to the version and root it was made with."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "version",
+            "type": "u32"
+          },
+          {
+            "name": "collection",
+            "docs": [
+              "The collection every listed item belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "snapshot_hash",
+            "docs": [
+              "sha256 of the published snapshot file, so anyone can check the file the roots came from."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "published_at",
+            "type": "i64"
+          },
+          {
+            "name": "families",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "FamilyRoot"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RegistryPublished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u32"
+          },
+          {
+            "name": "collection",
+            "type": "pubkey"
+          },
+          {
+            "name": "snapshot_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "families",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "Sold",
       "type": {
         "kind": "struct",
@@ -1509,6 +3447,246 @@
           {
             "name": "seller_received",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Swap",
+      "docs": [
+        "Stage 5: an offer of 1 to MAX_SWAP_ITEMS items, plus optional SOL, for one listed item. The SOL on top and the",
+        "offerer's $1 sit in this account above its rent; the offered items stay frozen in the offerer's wallet."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "swap_id",
+            "docs": [
+              "Taken from Config; never reused."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Chosen by the offerer's browser (random); with the offerer it fixes the Swap's address (as Offer.nonce)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "offerer",
+            "type": "pubkey"
+          },
+          {
+            "name": "lister",
+            "docs": [
+              "The listing's seller when the offer was made; may decline."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "listing_id",
+            "docs": [
+              "The listing the offer is for. Any sale, cancel, swap or relist ends that listing, so the offer can't fill."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "listed_asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_on_top",
+            "docs": [
+              "SOL added on top by the offerer (0, or at least 0.01 SOL), held here."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fee_held",
+            "docs": [
+              "The offerer's $1, held here until the swap is accepted (fee wallet) or ends (back to the offerer)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          },
+          {
+            "name": "state",
+            "docs": [
+              "SWAP_OPEN or SWAP_ENDED (an accepted swap's account is closed)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "released",
+            "docs": [
+              "Items released after the offer ended, one bit per item."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "items",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swap_id",
+            "type": "u64"
+          },
+          {
+            "name": "listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "lister",
+            "type": "pubkey"
+          },
+          {
+            "name": "offerer",
+            "type": "pubkey"
+          },
+          {
+            "name": "listed_asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "items",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "sol_on_top",
+            "type": "u64"
+          },
+          {
+            "name": "royalty",
+            "type": "u64"
+          },
+          {
+            "name": "lister_received",
+            "type": "u64"
+          },
+          {
+            "name": "fees",
+            "docs": [
+              "Both $1 fees."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapEnded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swap_id",
+            "type": "u64"
+          },
+          {
+            "name": "reason",
+            "docs": [
+              "1 cancelled by the offerer, 2 declined by the lister, 3 closed after expiry."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "refunded",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapItemsReleased",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swap_id",
+            "type": "u64"
+          },
+          {
+            "name": "released",
+            "type": "u8"
+          },
+          {
+            "name": "of",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapOffered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swap_id",
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "offerer",
+            "type": "pubkey"
+          },
+          {
+            "name": "lister",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing_id",
+            "type": "u64"
+          },
+          {
+            "name": "listed_asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "items",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "sol_on_top",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
           }
         ]
       }

@@ -119,7 +119,17 @@ async function closeInstruction(name: "cancel_listing" | "close_stale_listing", 
     const role = w && s ? AccountRole.WRITABLE_SIGNER : w ? AccountRole.WRITABLE : s ? AccountRole.READONLY_SIGNER : AccountRole.READONLY;
     return { address: addr, role };
   });
-  return { programAddress: program, accounts, data: new Uint8Array(def.discriminator) };
+  // cancel_listing names the listing it cancels (review finding A-2: a cancel signed for an older listing of the same
+  // item can't end a newer one); close_stale_listing takes no arguments. Anything else in the IDL is refused.
+  const args = def.args.map((a) => {
+    if (name === "cancel_listing" && a.name === "listing_id" && a.type === "u64") { const b = new Uint8Array(8); new DataView(b.buffer).setBigUint64(0, l.id, true); return b; }
+    throw new Error(`unexpected argument ${a.name} for ${name} in IDL`);
+  });
+  const data = new Uint8Array(8 + args.reduce((n, x) => n + x.length, 0));
+  data.set(def.discriminator, 0);
+  let at = 8;
+  for (const x of args) { data.set(x, at); at += x.length; }
+  return { programAddress: program, accounts, data };
 }
 
 // ------------------------------------------------------------------ wallet (Wallet Standard)

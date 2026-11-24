@@ -29,6 +29,7 @@ npm run build     # writes dist/mercado-recovery-<version>.html and its .sha256
 
 The build is reproducible: the same source, lockfile and esbuild version give the same file and the same SHA-256.
 Version 1.0.0 builds to `c48cc2f5759d0e7f947dc5972f831710709164be9246c2ecfe0d9e5e5e9075cf` (also in `dist/mercado-recovery-1.0.0.html.sha256`). The tag `v1.0.0` pins it.
+Version 1.1.0 builds to `b8f6efcdd51564544881e63274012cf420c767d600eb4549986fe410535c6705`. It is for the Mercado program after the 23 November 2026 review fixes: a cancel names the listing it cancels, so a cancel signed for an older listing of the same item can never end a newer one. Use 1.0.0 only with a program from before that update.
 
 ## Tested
 
