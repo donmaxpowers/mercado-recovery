@@ -11,7 +11,10 @@
  *     goes back to the offerer. It releases no items, so one stuck item can't block the refund.
  *   - release_swap_items: anyone thaws an ended swap offer's items and hands them back, a few per transaction.
  * Every transaction is built here from the program's published interface (idl/mercado.json): the instruction's
- * discriminator and account order come from that file, and nothing else is added.
+ * discriminator and account order come from that file, and nothing else is added. Since v1.3.0 the wallet only signs:
+ * the tool checks the signed bytes against what it built (payer, blockhash, the one Mercado instruction, its accounts
+ * and data, compute-budget limits, priority fee at most 0.005 SOL), checks the RPC is the chosen network, sends the
+ * transaction itself and reports it only once the network confirms it.
  */
 import {
   AccountRole,
@@ -51,13 +54,15 @@ const T = {
     network: "Network", rpc: "RPC address", program: "Mercado program", connect: "Connect wallet", noWallet: "No Phantom, Solflare or Backpack wallet found in this browser.",
     yours: "Your listings", none: "No Mercado listings for this wallet.", cancel: "Cancel listing", price: "Price", id: "Listing",
     stale: "Close a stale listing", staleHelp: "For a listing whose item moved or lost Mercado's delegate. Anyone can do this; the item is thawed and the rent goes to its seller.",
-    asset: "Item address", close: "Close it", sent: "Sent", failed: "Failed", loading: "Loading…", connected: "Connected",
+    asset: "Item address", close: "Close it", sent: "Confirmed", failed: "Failed", loading: "Loading…", connected: "Connected",
     missingProgram: "Set the Mercado program address for this network first.",
     offers: "Your offers", noOffers: "No open offers from this wallet.", cancelOffer: "Cancel offer, get the SOL back", offer: "Offer", family: "family offer", itemOffer: "item offer", held: "Held", each: "each", left: "left",
     swaps: "Your swap offers", noSwaps: "No swap offers made by or to this wallet.", swap: "Swap offer", youOffered: "You offered", offeredToYou: "Offered to you",
     items: "items", plus: "plus", expired: "expired", expires: "expires", ended: "ended, items waiting", endSwap: "End it, return the SOL", release: "Hand back the next {n}",
     swapBy: "Finish a swap offer", swapByHelp: "Anyone can end a swap offer once it has expired, and anyone can hand back the items of an ended one. Paste the swap offer's address (it is on its offer page).",
     swapAddr: "Swap offer address", find: "Find it", notSwap: "No Mercado swap offer at this address.", notYet: "Only its offerer or lister can end it before it expires.",
+    confirming: "Sent, waiting for the network to confirm:", failedOnChain: "The network refused it:", notConfirmed: "Not confirmed in time; check before trying again:",
+    one: "Hand back only this one", unreadable: "A swap offer here can't be read right now (status unavailable). Try again later.",
   },
   es: {
     title: "Herramienta de recuperación de MERCADO MIGORY",
@@ -65,13 +70,15 @@ const T = {
     network: "Red", rpc: "Dirección RPC", program: "Programa de Mercado", connect: "Conectar wallet", noWallet: "No se encontró Phantom, Solflare ni Backpack en este navegador.",
     yours: "Tus listados", none: "Esta wallet no tiene listados en Mercado.", cancel: "Cancelar listado", price: "Precio", id: "Listado",
     stale: "Cerrar un listado caducado", staleHelp: "Para un listado cuyo artículo se movió o perdió el delegado de Mercado. Cualquiera puede hacerlo; el artículo se descongela y la renta va a su vendedor.",
-    asset: "Dirección del artículo", close: "Cerrarlo", sent: "Enviado", failed: "Falló", loading: "Cargando…", connected: "Conectada",
+    asset: "Dirección del artículo", close: "Cerrarlo", sent: "Confirmado", failed: "Falló", loading: "Cargando…", connected: "Conectada",
     missingProgram: "Primero indica la dirección del programa de Mercado para esta red.",
     offers: "Tus ofertas", noOffers: "Esta wallet no tiene ofertas abiertas.", cancelOffer: "Cancelar oferta y recuperar el SOL", offer: "Oferta", family: "oferta por familia", itemOffer: "oferta por artículo", held: "Retenido", each: "cada uno", left: "restantes",
     swaps: "Tus ofertas de intercambio", noSwaps: "No hay ofertas de intercambio hechas por o para esta wallet.", swap: "Oferta de intercambio", youOffered: "Ofreciste", offeredToYou: "Te ofrecieron",
     items: "artículos", plus: "más", expired: "vencida", expires: "vence", ended: "terminada, artículos por devolver", endSwap: "Terminarla y devolver el SOL", release: "Devolver los siguientes {n}",
     swapBy: "Terminar una oferta de intercambio", swapByHelp: "Cualquiera puede terminar una oferta de intercambio vencida, y cualquiera puede devolver los artículos de una ya terminada. Pega la dirección de la oferta (está en su página).",
     swapAddr: "Dirección de la oferta de intercambio", find: "Buscarla", notSwap: "No hay una oferta de intercambio de Mercado en esta dirección.", notYet: "Antes de que venza, solo quien la hizo o quien listó el artículo puede terminarla.",
+    confirming: "Enviada, esperando a que la red confirme:", failedOnChain: "La red la rechazó:", notConfirmed: "No se confirmó a tiempo; revisa antes de volver a intentarlo:",
+    one: "Devolver solo este", unreadable: "Una oferta de intercambio aquí no se puede leer ahora (estado no disponible). Inténtalo más tarde.",
   },
 };
 type Lang = keyof typeof T;
@@ -144,14 +151,16 @@ const bytes = (x: Uint8Array) => { const b = new Uint8Array(4 + x.length); new D
 
 /** cancel_listing or close_stale_listing. cancel_listing names the listing it cancels (review finding A-2: a cancel
  *  signed for an older listing of the same item can't end a newer one); close_stale_listing takes no arguments. */
-async function closeInstruction(name: "cancel_listing" | "close_stale_listing", program: Address, signer: Address, l: Listing) {
+async function closeInstruction(name: "cancel_listing" | "close_stale_listing", program: Address, signer: Address, l: Listing, rpcUrl: string) {
+  // The item's collection as it is now (the program checks it); the listing's own if the item is in none or gone.
+  const collection = (await collectionOf(rpcUrl, l.asset)) ?? l.collection;
   return build(name, program, {
     signer,
     seller: l.seller,
     config: await pda(program, ["config"]),
     authority: await pda(program, ["authority"]),
     asset: l.asset,
-    collection: l.collection,
+    collection,
     listing: l.address,
     lock: await pda(program, ["lock", l.asset]),
     core_program: CORE,
@@ -195,13 +204,17 @@ function decodeSwap(addr: Address, d: Uint8Array): Swap {
 }
 const pendingItems = (s: Swap) => s.items.map((_, i) => i).filter((i) => !(s.released & (1 << i)));
 
-/** A Core asset's collection (base fields: key 1, owner, update authority kind 2 = Collection, then its address), or
- *  null if the item can't be read (burned): the program then just closes its lock period and needs no collection. */
+/**
+ * A Core asset's collection as it is now (base fields: key 1, owner, update authority kind 2 = Collection, then its
+ * address), or null: the item is in no collection (its update authority may take it out of one), or it is gone
+ * (closed or burned). The program names an item's current collection and needs none in those cases (stage 5
+ * re-check), so a release never depends on the collection the item had when it was locked.
+ */
 async function collectionOf(rpcUrl: string, asset: Address): Promise<Address | null> {
   const info = await createSolanaRpc(rpcUrl).getAccountInfo(asset, { encoding: "base64" }).send();
-  const d = info.value ? (getBase64Encoder().encode(info.value.data[0]) as Uint8Array) : null;
-  if (!d || d[0] !== 1) return null;
-  if (d[33] !== 2) throw new Error(`can't read the collection of ${asset}`);
+  if (!info.value || info.value.owner !== CORE) return null;
+  const d = getBase64Encoder().encode(info.value.data[0]) as Uint8Array;
+  if (d[0] !== 1 || d[33] !== 2) return null;
   return dec.decode(d.subarray(34, 66));
 }
 
@@ -209,8 +222,10 @@ async function collectionOf(rpcUrl: string, asset: Address): Promise<Address | n
  * end_swap with no items (the SOL goes back to the offerer; nothing an item does can stop it), or
  * release_swap_items for the next few items of an ended offer: their collections (each once), then (asset, lock) pairs.
  */
-async function swapExitInstruction(rpcUrl: string, program: Address, signer: Address, s: Swap, releaseOnly: boolean): Promise<Ix> {
-  const idx = releaseOnly ? pendingItems(s).slice(0, RELEASE_BATCH) : [];
+async function swapExitInstruction(rpcUrl: string, program: Address, signer: Address, s: Swap, releaseOnly: boolean, which?: number[]): Promise<Ix> {
+  // `which`: the holder's own choice of items (one item that won't unfreeze never holds up the others).
+  const idx = releaseOnly ? (which ?? pendingItems(s)).filter((i) => pendingItems(s).includes(i)).slice(0, RELEASE_BATCH) : [];
+  if (releaseOnly && !idx.length) throw new Error("no item left to hand back");
   const assets = idx.map((i) => s.items[i]);
   const cols = [...new Set((await Promise.all(assets.map((a) => collectionOf(rpcUrl, a)))).filter((c): c is Address => !!c))];
   const extra: Address[] = [...cols];
@@ -235,7 +250,8 @@ let account: { address: string } | null = null;
 const SUPPORTED = ["Phantom", "Solflare", "Backpack"];
 
 function wallets(): StdWallet[] {
-  return getWallets().get().filter((w) => SUPPORTED.includes(w.name) && "standard:connect" in w.features && "solana:signAndSendTransaction" in w.features);
+  // Sign-only wallets (stage 5 re-check): the tool checks what the wallet signed before anything is sent.
+  return getWallets().get().filter((w) => SUPPORTED.includes(w.name) && "standard:connect" in w.features && "solana:signTransaction" in w.features);
 }
 
 async function connect(w: StdWallet) {
@@ -245,23 +261,138 @@ async function connect(w: StdWallet) {
   account = r.accounts[0] ?? null;
 }
 
+/** Each network's genesis hash: the RPC address given must really be that network before anything is signed. */
+const GENESIS: Record<string, string> = {
+  mainnet: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+  devnet: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+};
+
+// --- reading back what the wallet signed (Solana's wire format), to check it before it is sent
+function shortVec(b: Uint8Array, at: number): [number, number] {
+  let n = 0, shift = 0;
+  for (let i = 0; i < 3; i++) {
+    const x = b[at++];
+    if (x === undefined) throw new Error("truncated transaction");
+    n |= (x & 0x7f) << shift;
+    if (!(x & 0x80)) return [n, at];
+    shift += 7;
+  }
+  throw new Error("bad length in transaction");
+}
+interface Decoded { signatures: number; signers: number; roSigned: number; roUnsigned: number; keys: string[]; blockhash: string; ixs: { program: string; accounts: number[]; data: Uint8Array }[]; lookups: number }
+function decodeTx(tx: Uint8Array): Decoded {
+  let [nSig, at] = shortVec(tx, 0);
+  at += 64 * nSig;
+  if (tx[at] !== 0x80) throw new Error("not a version 0 transaction");
+  at += 1;
+  const [signers, roSigned, roUnsigned] = [tx[at], tx[at + 1], tx[at + 2]];
+  at += 3;
+  let n: number;
+  [n, at] = shortVec(tx, at);
+  const keys = Array.from({ length: n }, (_, i) => dec.decode(tx.subarray(at + 32 * i, at + 32 * i + 32)));
+  at += 32 * n;
+  const blockhash = b58.decode(tx.subarray(at, at + 32));
+  at += 32;
+  [n, at] = shortVec(tx, at);
+  const ixs = [];
+  for (let i = 0; i < n; i++) {
+    const program = keys[tx[at++]];
+    let m: number;
+    [m, at] = shortVec(tx, at);
+    const accounts = Array.from(tx.subarray(at, at + m));
+    at += m;
+    [m, at] = shortVec(tx, at);
+    ixs.push({ program, accounts, data: tx.slice(at, at + m) });
+    at += m;
+  }
+  const [lookups] = shortVec(tx, at);
+  return { signatures: nSig, signers, roSigned, roUnsigned, keys, blockhash, ixs, lookups };
+}
+
+/** The most a priority fee may cost (as on the website): 0.005 SOL. */
+const MAX_PRIORITY_LAMPORTS = 5_000_000n;
+
+/**
+ * The signed transaction must be exactly what the tool built: paid and signed by this wallet alone, the same
+ * blockhash, no lookup tables, the same Mercado instruction (program, every account and its role, the data), and
+ * nothing else but compute-budget instructions, with any priority fee the wallet added within 0.005 SOL (counting
+ * the runtime's default units when no limit is set: 200,000 per program instruction, 3,000 per builtin one).
+ */
+function checkSigned(tx: Uint8Array, payer: string, blockhash: string, built: Ix[]): void {
+  const m = decodeTx(tx);
+  const fail = (why: string) => { throw new Error(`the wallet returned a different transaction (${why}); nothing was sent`); };
+  if (m.lookups !== 0) fail("lookup tables");
+  if (m.signers !== 1 || m.signatures !== 1) fail("more than one signer");
+  if (m.keys[0] !== payer) fail("another fee payer");
+  if (m.blockhash !== blockhash) fail("another blockhash");
+  const expected = built.filter((i) => i.programAddress !== COMPUTE_BUDGET);
+  const ours = m.ixs.filter((i) => i.program !== COMPUTE_BUDGET);
+  if (expected.length !== 1 || ours.length !== 1) fail("instruction count");
+  const [want, got] = [expected[0], ours[0]];
+  if (got.program !== want.programAddress) fail("another program");
+  if (got.data.length !== want.data.length || !got.data.every((x, i) => x === want.data[i])) fail("other instruction data");
+  if (got.accounts.length !== want.accounts.length) fail("other accounts");
+  got.accounts.forEach((k, n) => {
+    const w = want.accounts[n];
+    if (m.keys[k] !== w.address) fail(`account ${n + 1}`);
+    const signer = k < m.signers;
+    const writable = signer ? k < m.signers - m.roSigned : k < m.keys.length - m.roUnsigned;
+    const wantW = w.role === AccountRole.WRITABLE || w.role === AccountRole.WRITABLE_SIGNER;
+    const wantS = w.role === AccountRole.READONLY_SIGNER || w.role === AccountRole.WRITABLE_SIGNER;
+    if ((wantS && !signer) || (wantW && !writable)) fail(`role of account ${n + 1}`);
+  });
+  const budget = m.ixs.filter((i) => i.program === COMPUTE_BUDGET);
+  const seen = new Set<number>();
+  let limit = 200_000n + 3_000n * BigInt(budget.length), price = 0n;
+  for (const b of budget) {
+    if (b.accounts.length || seen.has(b.data[0])) fail("compute budget");
+    seen.add(b.data[0]);
+    const v = new DataView(b.data.buffer, b.data.byteOffset, b.data.byteLength);
+    if (b.data[0] === 1 && b.data.length === 5) { if (v.getUint32(1, true) > 256 * 1024) fail("heap"); }
+    else if (b.data[0] === 2 && b.data.length === 5) { limit = BigInt(v.getUint32(1, true)); if (limit > 1_400_000n) fail("compute units"); }
+    else if (b.data[0] === 3 && b.data.length === 9) price = v.getBigUint64(1, true);
+    else fail("unknown compute budget instruction");
+  }
+  if ((limit * price + 999_999n) / 1_000_000n > MAX_PRIORITY_LAMPORTS) fail("priority fee above 0.005 SOL");
+}
+
+/**
+ * Builds the transaction, has the wallet sign it (sign only), checks the signed bytes, sends them, and waits until the
+ * network confirms them (or says they failed, or the blockhash expires). Returns the signature once confirmed.
+ */
 async function send(instructions: Ix[], rpcUrl: string, chain: string): Promise<string> {
   if (!wallet || !account) throw new Error("connect a wallet first");
   const rpc = createSolanaRpc(rpcUrl);
-  const { value: blockhash } = await rpc.getLatestBlockhash().send();
+  const net = settings().net;
+  if (GENESIS[net] && (await rpc.getGenesisHash().send()) !== GENESIS[net]) throw new Error(`the RPC address is not ${net}; nothing was sent`);
+  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
   const msg = pipe(
     createTransactionMessage({ version: 0 }),
     (m) => setTransactionMessageFeePayer(address(account!.address), m),
     (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
     (m) => appendTransactionMessageInstructions(instructions, m),
   );
-  const bytes = getTransactionEncoder().encode(compileTransaction(msg)) as Uint8Array;
-  const f = wallet.features["solana:signAndSendTransaction"] as {
-    signAndSendTransaction: (i: { account: unknown; transaction: Uint8Array; chain: string }) => Promise<{ signature: Uint8Array }[]>;
+  const unsigned = getTransactionEncoder().encode(compileTransaction(msg)) as Uint8Array;
+  const f = wallet.features["solana:signTransaction"] as {
+    signTransaction: (i: { account: unknown; transaction: Uint8Array; chain: string }) => Promise<{ signedTransaction: Uint8Array }[]>;
   };
   const acct = wallet.accounts.find((a) => a.address === account!.address);
-  const [{ signature }] = await f.signAndSendTransaction({ account: acct, transaction: bytes, chain });
-  return b58.decode(signature);
+  const [{ signedTransaction }] = await f.signTransaction({ account: acct, transaction: unsigned, chain });
+  const signed = new Uint8Array(signedTransaction);
+  checkSigned(signed, account.address, blockhash.blockhash, instructions);
+  const sig = b58.decode(signed.subarray(1, 65));
+  let b64 = "";
+  for (let i = 0; i < signed.length; i += 0x8000) b64 += String.fromCharCode(...signed.subarray(i, i + 0x8000));
+  await rpc.sendTransaction(btoa(b64) as never, { encoding: "base64", preflightCommitment: "confirmed" }).send();
+  status(`${T[lang].confirming} ${sig}`);
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const st = (await rpc.getSignatureStatuses([sig as never]).send()).value[0];
+    if (st?.err) throw new Error(`${T[lang].failedOnChain} ${sig}: ${JSON.stringify(st.err, (_, v) => (typeof v === "bigint" ? v.toString() : v))}`);
+    if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) return sig;
+    if (i % 5 === 4 && (await rpc.getBlockHeight({ commitment: "confirmed" }).send()) > blockhash.lastValidBlockHeight) break;
+  }
+  throw new Error(`${T[lang].notConfirmed} ${sig}`);
 }
 
 // ------------------------------------------------------------------ page
@@ -312,9 +443,9 @@ async function loadListings() {
     b.onclick = async () => {
       try {
         b.disabled = true;
-        const sig = await send([await closeInstruction("cancel_listing", address(s.program), address(account!.address), l)], s.rpc, s.chain);
+        const sig = await send([await closeInstruction("cancel_listing", address(s.program), address(account!.address), l, s.rpc)], s.rpc, s.chain);
         status(`${T[lang].sent}: ${sig}`);
-        setTimeout(loadListings, 2500);
+        setTimeout(loadListings, 1500);
       } catch (e) {
         status(`${T[lang].failed}: ${(e as Error).message}`, true);
         b.disabled = false;
@@ -337,7 +468,7 @@ async function closeStale() {
     const info = await rpc.getAccountInfo(listingAddr, { encoding: "base64" }).send();
     if (!info.value) throw new Error("no Mercado listing for this item");
     const l = decodeListing(listingAddr, getBase64Encoder().encode(info.value.data[0]) as Uint8Array);
-    const sig = await send([await closeInstruction("close_stale_listing", program, address(account.address), l)], s.rpc, s.chain);
+    const sig = await send([await closeInstruction("close_stale_listing", program, address(account.address), l, s.rpc)], s.rpc, s.chain);
     status(`${T[lang].sent}: ${sig}`);
   } catch (e) {
     status(`${T[lang].failed}: ${(e as Error).message}`, true);
@@ -373,7 +504,7 @@ function actionRow(list: HTMLElement, html: string, label: string, action: () =>
       b.disabled = true;
       const sig = await send(await action(), s.rpc, s.chain);
       status(`${T[lang].sent}: ${sig}`);
-      setTimeout(after, 2500);
+      setTimeout(after, 1500);
     } catch (e) {
       status(`${T[lang].failed}: ${(e as Error).message}`, true);
       b.disabled = false;
@@ -445,6 +576,19 @@ function swapRow(list: HTMLElement, sw: Swap, reload: () => void) {
     note.textContent = sw.state === SWAP_ENDED ? "" : t.notYet;
     row.querySelector("button")!.replaceWith(note);
   }
+  // An ended offer: each frozen item can also be handed back on its own, so one item that won't unfreeze never
+  // holds up the others (stage 5 re-check).
+  if (sw.state === SWAP_ENDED && me) {
+    for (const i of pendingItems(sw)) {
+      actionRow(list, `<small>&nbsp;&nbsp;#${i + 1} <code title="${sw.items[i]}">${short(sw.items[i])}</code></small>`, t.one, async () => {
+        const info = await createSolanaRpc(s.rpc).getAccountInfo(sw.address, { encoding: "base64" }).send();
+        if (!info.value) throw new Error(t.notSwap);
+        const fresh = decodeSwap(sw.address, getBase64Encoder().encode(info.value.data[0]) as Uint8Array);
+        if (fresh.id !== sw.id) throw new Error(t.notSwap);
+        return [...swapBudget(), await swapExitInstruction(s.rpc, address(s.program), address(me), fresh, true, [i])];
+      }, reload).classList.add("sub");
+    }
+  }
 }
 
 async function loadSwaps() {
@@ -455,10 +599,15 @@ async function loadSwaps() {
   try {
     const [made, got] = await Promise.all([mine(SWAP_DISC, SWAP_OFFERER, account.address), mine(SWAP_DISC, SWAP_LISTER, account.address)]);
     const seen = new Set<string>();
-    const swaps = [...made, ...got].filter((r) => !seen.has(r.pubkey) && seen.add(r.pubkey)).map((r) => decodeSwap(r.pubkey, r.data));
+    const raw = [...made, ...got].filter((r) => !seen.has(r.pubkey) && seen.add(r.pubkey));
+    // An offer that can't be decoded is shown as unavailable, never dropped (stage 5 re-check).
+    const swaps: Swap[] = [];
+    let unreadable = 0;
+    for (const r of raw) { try { swaps.push(decodeSwap(r.pubkey, r.data)); } catch { unreadable++; } }
     list.innerHTML = "";
-    if (!swaps.length) { list.textContent = T[lang].noSwaps; return; }
+    if (!swaps.length && !unreadable) { list.textContent = T[lang].noSwaps; return; }
     for (const sw of swaps) swapRow(list, sw, loadSwaps);
+    if (unreadable) { const p = document.createElement("p"); p.className = "bad"; p.textContent = T[lang].unreadable; list.appendChild(p); }
   } catch (e) {
     list.textContent = `${T[lang].failed}: ${(e as Error).message}`;
   }
@@ -473,8 +622,10 @@ async function findSwap() {
     const info = await createSolanaRpc(s.rpc).getAccountInfo(addr, { encoding: "base64" }).send();
     const d = info.value ? (getBase64Encoder().encode(info.value.data[0]) as Uint8Array) : null;
     if (!d || info.value!.owner !== s.program || !SWAP_DISC.every((b, i) => d[i] === b)) throw new Error(T[lang].notSwap);
+    let sw: Swap;
+    try { sw = decodeSwap(addr, d); } catch { throw new Error(T[lang].unreadable); }
     out.innerHTML = "";
-    swapRow(out, decodeSwap(addr, d), () => void findSwap());
+    swapRow(out, sw, () => void findSwap());
   } catch (e) {
     out.textContent = "";
     status(`${T[lang].failed}: ${(e as Error).message}`, true);

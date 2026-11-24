@@ -1,7 +1,7 @@
 # MERCADO MIGORY recovery tool
 
 A single HTML page for the day mercado.migory.com is down, broken or not trusted. It talks only to a Solana RPC
-node and your own wallet (Phantom, Solflare or Backpack). It can only take things back out of Mercado, using exits
+node and your own wallet (Phantom, Solflare or Backpack, any version that can sign without sending). It can only take things back out of Mercado, using exits
 the Mercado program always allows, even while trading is paused:
 
 - **Cancel your listing.** Your item is unfrozen and Mercado's permissions on it are removed.
@@ -12,7 +12,14 @@ the Mercado program always allows, even while trading is paused:
   anyone can end it once it has expired. The SOL on top, the fee held and the deposit go back to the offerer. This
   step hands back no items, so no single item can block the refund.
 - **Hand back a swap offer's items.** Once a swap offer has ended, anyone can unfreeze its items and return
-  Mercado's permissions on them, three items per transaction, until all are back.
+  Mercado's permissions on them, three per transaction or one item at a time, so one item that won't unfreeze never
+  holds up the others. Each item is named with its collection as it is now, so an item moved to another collection,
+  or out of every collection, still comes back.
+
+Your wallet only signs. Before anything is sent, the page reads back what the wallet signed and checks it is exactly
+the transaction it built (your wallet pays, the same Mercado instruction with the same accounts and data, nothing
+else but compute limits, any priority fee at most 0.005 SOL), and that the RPC address really is the network you
+chose. Then it sends the transaction itself and says "Confirmed" only once the network confirms it.
 
 The page builds each transaction from the program's published interface (`idl/mercado.json`, copied from the Mercado program). It
 contains no other actions, loads no outside scripts, and its content security policy only allows connections
@@ -41,6 +48,12 @@ Version 1.1.0 builds to `b8f6efcdd51564544881e63274012cf420c767d600eb4549986fe41
 Version 1.2.0 builds to `77a39c535a0820cff1e68c890548842ff5a72b9ab8744f90d24400e9eb8e85eb`. It adds offers and swap offers, and is for the
 Mercado program after the stage 5 review fixes (24 November 2026): ending a swap offer or handing back its items names the
 offer (`swap_id`), so a step signed for one offer can never act on a replacement at the same address.
+Version 1.3.0 builds to `b5a5a44cd7022ba94366bbebb9799ea7a17b87d64f1a75f3409e5a24ec9cb447`. It is for the Mercado program after the
+stage 5 re-check fixes (24 November 2026): sign-only wallets with the check above, items handed back one at a time
+if needed, and each item named with its current collection (or none). Tested on devnet the same day: a wallet that
+returned a different transaction was refused with nothing sent; an offer cancelled, a swap offer ended and its two
+items handed back one by one, another wallet finishing an expired swap offer by its address, and a listing
+cancelled, every amount exact (`program/evidence/devnet-recovery-1.3.0.json` in the Mercado program repository).
 
 ## Tested
 
