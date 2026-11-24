@@ -44,6 +44,7 @@ an RPC node returns is shown as plain text, never as page markup, and every addr
 ```
 npm ci
 npm run build     # writes dist/mercado-recovery-<version>.html and its .sha256
+npm test          # the check of what a wallet returns, against changed transactions
 ```
 
 The build is reproducible: the same source, lockfile and esbuild version give the same file and the same SHA-256.
@@ -67,6 +68,15 @@ data, and another that changed only one account's role, were both refused with n
 swap offer ended and its two items handed back one by one, and an unrelated wallet finishing an expired swap offer by
 its address, every amount exact (`program/evidence/devnet-recovery-1.4.0.json` and `devnet-recovery-1.4.0-roles.json`
 in the Mercado program repository).
+Version 1.4.1 builds to `f117a9a13df8c868ea77b2f0523973d74677e561b88b2f27c283868d1d50f421`. It fixes one thing found
+in the final re-check: when a wallet adds its own priority fee to a transaction that the tool built without one (a
+listing cancel, a stale close, an offer cancel), the Compute Budget program's address comes with it, and 1.4.0
+refused that as an extra account, so the cancel never went out. 1.4.1 allows that address, read-only, only when the
+transaction really has compute-budget instructions, which are still checked one by one (no duplicates, the priority
+fee at most 0.005 SOL); every other account and role must still match exactly. `npm test` runs the check against
+transactions changed in each of these ways. Tested on devnet the same day with a wallet that adds a priority fee: an
+offer cancel and a listing cancel both confirmed (1.4.0 refused both), the priority fee paid
+(`program/evidence/devnet-recovery-1.4.1-priority.json` in the Mercado program repository). Use 1.4.1, not 1.4.0.
 
 ## Tested
 

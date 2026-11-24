@@ -1,11 +1,12 @@
 {
   "name": "mercado-recovery",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "MERCADO MIGORY recovery tool: cancel your listings and offers, close stale listings and end swap offers without mercado.migory.com.",
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "npx -y tsx@4 test/check.test.ts"
   },
   "dependencies": {
     "@solana/kit": "8.6.0",
