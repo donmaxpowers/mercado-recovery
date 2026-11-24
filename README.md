@@ -38,7 +38,7 @@ npm run build     # writes dist/mercado-recovery-<version>.html and its .sha256
 The build is reproducible: the same source, lockfile and esbuild version give the same file and the same SHA-256.
 Version 1.0.0 builds to `c48cc2f5759d0e7f947dc5972f831710709164be9246c2ecfe0d9e5e5e9075cf` (also in `dist/mercado-recovery-1.0.0.html.sha256`). The tag `v1.0.0` pins it.
 Version 1.1.0 builds to `b8f6efcdd51564544881e63274012cf420c767d600eb4549986fe410535c6705`. It is for the Mercado program after the 23 November 2026 review fixes: a cancel names the listing it cancels, so a cancel signed for an older listing of the same item can never end a newer one. Use 1.0.0 only with a program from before that update.
-Version 1.2.0 builds to `7cec54774e6a9167a40cb5e16733b11d14dbc9058a84dea99f3c1c0954705a30`. It adds offers and swap offers, and is for the
+Version 1.2.0 builds to `77a39c535a0820cff1e68c890548842ff5a72b9ab8744f90d24400e9eb8e85eb`. It adds offers and swap offers, and is for the
 Mercado program after the stage 5 review fixes (24 November 2026): ending a swap offer or handing back its items names the
 offer (`swap_id`), so a step signed for one offer can never act on a replacement at the same address.
 
@@ -47,6 +47,14 @@ offer (`swap_id`), so a step signed for one offer can never act on a replacement
 On a local Solana validator running the real Metaplex Core program (23 November 2026), the page was opened from
 disk with a stand-in wallet signing as a test seller. It cancelled a listing with one signature. The item came
 back unfrozen with both permissions returned to its owner. The only network requests went to the RPC node.
+
+Version 1.2.0 was tested on devnet on 24 November 2026, against the upgraded Mercado program, opened from disk with
+stand-in wallets holding throwaway test keys. It cancelled an item offer (the held SOL and the deposit came back
+exactly); ended a 4-item swap offer, returning the SOL on top and the $1 first, then handed its items back 3 and 1;
+and, from an unrelated wallet, found an expired swap offer by its address, ended it and handed its item back. Every
+amount was exact, every item came back unfrozen with both permissions returned to its owner, and the only network
+requests went to the devnet RPC node. The report is `program/evidence/devnet-recovery-1.2.0.json` in the Mercado
+program repository.
 
 This repository is public on purpose (approved by MIGORY on 23 November 2026). Holders, and anyone checking on
 their behalf, can read and rebuild the tool without access to the private website code.
