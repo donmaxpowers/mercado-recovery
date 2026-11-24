@@ -9,8 +9,9 @@ the Mercado program always allows, even while trading is paused:
   item is unfrozen first, and the listing's deposit goes back to its seller.
 - **Cancel your offer** (item offers and family offers). The SOL still held in it goes back to you.
 - **End a swap offer.** Its offerer can end it at any time, the owner of the listed item can decline it, and
-  anyone can end it once it has expired. The SOL on top, the fee held and the deposit go back to the offerer. This
-  step hands back no items, so no single item can block the refund.
+  anyone can end it once it has expired. The SOL on top and the fee held go back to the offerer. This step hands
+  back no items, so no single item can block the refund. The offer's deposit (its account's rent) stays until the
+  last item is handed back, then goes to the offerer too.
 - **Hand back a swap offer's items.** Once a swap offer has ended, anyone can unfreeze its items and return
   Mercado's permissions on them, three per transaction or one item at a time, so one item that won't unfreeze never
   holds up the others. Each item is named with its collection as it is now, so an item moved to another collection,
@@ -22,15 +23,18 @@ else but compute limits, any priority fee at most 0.005 SOL), and that the RPC a
 chose. Then it sends the transaction itself and says "Confirmed" only once the network confirms it.
 
 The page builds each transaction from the program's published interface (`idl/mercado.json`, copied from the Mercado program). It
-contains no other actions, loads no outside scripts, and its content security policy only allows connections
-to RPC nodes.
+contains no other actions and loads no outside scripts. Its content security policy allows connections only to RPC
+nodes, and allows exactly one script: the page's own, pinned by its SHA-256 (the build writes the hash in). Everything
+an RPC node returns is shown as plain text, never as page markup, and every address is checked to be one.
 
 ## Using it
 
 1. Download `mercado-recovery-<version>.html` from a published release, and check its SHA-256 against the
    release notes.
 2. Open the file in a browser that has your wallet extension.
-3. Pick the network. Mainnet's program address is filled in at launch.
+3. Pick the network. Mainnet's program address is not in this version: it will be written into the release made
+   for the mainnet launch (and its SHA-256 published), so nobody has to type or trust a pasted address. Until then
+   the Mainnet choice has an empty program field.
 4. Connect your wallet. Your listings, your offers and the swap offers made by or to you appear, each with the
    step you can take now.
 5. To finish someone else's expired or ended swap offer, paste its address under **Finish a swap offer**.
@@ -54,6 +58,15 @@ if needed, and each item named with its current collection (or none). Tested on 
 returned a different transaction was refused with nothing sent; an offer cancelled, a swap offer ended and its two
 items handed back one by one, another wallet finishing an expired swap offer by its address, and a listing
 cancelled, every amount exact (`program/evidence/devnet-recovery-1.3.0.json` in the Mercado program repository).
+Version 1.4.0 builds to `81a94724a5e2f803520ecd263b7c13399a6a6d2b845e7a9a7eb9793a0a1f1b0c`. It hardens the page itself (final re-check, 24 November 2026): rows are built from text only, addresses
+read from the RPC are checked, the content security policy allows only the page's own script by its hash, the check
+of the signed transaction now requires every account to have exactly the role the tool gave it, and accounts read
+again before a step must belong to the Mercado program. It is for the same program as 1.3.0 and the final re-check
+upgrade after it. Tested on devnet the same day against the upgraded program: a wallet that changed the instruction
+data, and another that changed only one account's role, were both refused with nothing sent; an offer cancelled, a
+swap offer ended and its two items handed back one by one, and an unrelated wallet finishing an expired swap offer by
+its address, every amount exact (`program/evidence/devnet-recovery-1.4.0.json` and `devnet-recovery-1.4.0-roles.json`
+in the Mercado program repository).
 
 ## Tested
 

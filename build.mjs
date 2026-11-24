@@ -16,7 +16,12 @@ const out = await build({
   define: { "process.env.NODE_ENV": '"production"' },
 });
 const js = out.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
-const html = readFileSync("src/page.html", "utf8").replace("__VERSION__", version).replace("<script>__SCRIPT__</script>", () => `<script>${js}</script>`);
+// The page allows exactly this script, by its SHA-256 (no 'unsafe-inline'): if anything injected a script into the
+// page, the browser would refuse to run it (final re-check, A).
+const scriptHash = `sha256-${createHash("sha256").update(js).digest("base64")}`;
+const html = readFileSync("src/page.html", "utf8").replace("__VERSION__", version).replace("__SCRIPT_HASH__", scriptHash)
+  .replace("<script>__SCRIPT__</script>", () => `<script>${js}</script>`);
+if (!html.includes(`script-src '${scriptHash}'`)) throw new Error("CSP hash not placed");
 mkdirSync("dist", { recursive: true });
 const file = `dist/mercado-recovery-${version}.html`;
 writeFileSync(file, html);

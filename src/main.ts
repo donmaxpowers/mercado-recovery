@@ -29,6 +29,7 @@ import {
   getBase64Encoder,
   getProgramDerivedAddress,
   getTransactionEncoder,
+  isAddress,
   pipe,
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
@@ -332,14 +333,23 @@ function checkSigned(tx: Uint8Array, payer: string, blockhash: string, built: Ix
   if (got.program !== want.programAddress) fail("another program");
   if (got.data.length !== want.data.length || !got.data.every((x, i) => x === want.data[i])) fail("other instruction data");
   if (got.accounts.length !== want.accounts.length) fail("other accounts");
-  got.accounts.forEach((k, n) => {
-    const w = want.accounts[n];
-    if (m.keys[k] !== w.address) fail(`account ${n + 1}`);
+  got.accounts.forEach((k, n) => { if (m.keys[k] !== want.accounts[n].address) fail(`account ${n + 1}`); });
+  // Exact roles (final re-check, A): every key in the message must have exactly the role the built transaction gives
+  // it, where a key used twice (the fee payer that is also the signer, say) takes the strongest of its uses, as the
+  // compiler merges them. No extra keys, none missing, no account made writable or a signer that wasn't.
+  const role = new Map<string, { s: boolean; w: boolean }>([[payer, { s: true, w: true }]]);
+  const use = (a: string, s: boolean, w: boolean) => { const r = role.get(a); role.set(a, { s: s || !!r?.s, w: w || !!r?.w }); };
+  for (const ix of built) {
+    use(ix.programAddress, false, false);
+    for (const a of ix.accounts ?? []) use(a.address, a.role === AccountRole.READONLY_SIGNER || a.role === AccountRole.WRITABLE_SIGNER, a.role === AccountRole.WRITABLE || a.role === AccountRole.WRITABLE_SIGNER);
+  }
+  if (m.keys.length !== role.size) fail("other accounts in the message");
+  m.keys.forEach((key, k) => {
+    const r = role.get(key);
+    if (!r) fail(`unexpected account ${key}`);
     const signer = k < m.signers;
     const writable = signer ? k < m.signers - m.roSigned : k < m.keys.length - m.roUnsigned;
-    const wantW = w.role === AccountRole.WRITABLE || w.role === AccountRole.WRITABLE_SIGNER;
-    const wantS = w.role === AccountRole.READONLY_SIGNER || w.role === AccountRole.WRITABLE_SIGNER;
-    if ((wantS && !signer) || (wantW && !writable)) fail(`role of account ${n + 1}`);
+    if (r!.s !== signer || r!.w !== writable) fail(`role of ${key}`);
   });
   const budget = m.ixs.filter((i) => i.program === COMPUTE_BUDGET);
   const seen = new Set<number>();
@@ -400,6 +410,25 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const sol = (l: bigint) => (Number(l) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 4 }) + " SOL";
 const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`;
 
+/*
+ * Rows are built from DOM nodes and text only (never innerHTML), so nothing an RPC returns can become markup, even an
+ * RPC that answers with crafted data (final re-check, A). Every address shown or used is checked to be one.
+ */
+type Part = string | Node;
+function el(tag: string, ...kids: Part[]): HTMLElement {
+  const e = document.createElement(tag);
+  e.append(...kids);
+  return e;
+}
+const br = () => document.createElement("br");
+/** An address as a short code with the full address on hover; anything that isn't an address is refused. */
+function addr(a: string): HTMLElement {
+  if (!isAddress(a)) throw new Error(`not an address: ${a.slice(0, 60)}`);
+  const c = el("code", short(a));
+  c.title = a;
+  return c;
+}
+
 function settings() {
   const net = ($("net") as HTMLSelectElement).value;
   return { net, rpc: ($("rpc") as HTMLInputElement).value.trim(), chain: NETWORKS[net].chain, program: ($("program") as HTMLInputElement).value.trim() };
@@ -428,8 +457,8 @@ async function loadListings() {
       ],
     })
     .send();
-  const items = res.map((r) => decodeListing(r.pubkey, getBase64Encoder().encode(r.account.data[0]) as Uint8Array));
-  list.innerHTML = "";
+  const items = res.filter((r) => isAddress(r.pubkey)).map((r) => decodeListing(r.pubkey, getBase64Encoder().encode(r.account.data[0]) as Uint8Array));
+  list.replaceChildren();
   if (!items.length) {
     list.textContent = T[lang].none;
     return;
@@ -437,7 +466,7 @@ async function loadListings() {
   for (const l of items) {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><b>${T[lang].id} #${l.id}</b><br><code title="${l.asset}">${short(l.asset)}</code> · ${T[lang].price}: ${sol(l.price)}</div>`;
+    row.append(el("div", el("b", `${T[lang].id} #${l.id}`), br(), addr(l.asset), ` · ${T[lang].price}: ${sol(l.price)}`));
     const b = document.createElement("button");
     b.textContent = T[lang].cancel;
     b.onclick = async () => {
@@ -466,7 +495,7 @@ async function closeStale() {
     const listingAddr = await pda(program, ["listing", asset]);
     const rpc = createSolanaRpc(s.rpc);
     const info = await rpc.getAccountInfo(listingAddr, { encoding: "base64" }).send();
-    if (!info.value) throw new Error("no Mercado listing for this item");
+    if (!info.value || info.value.owner !== program) throw new Error("no Mercado listing for this item");
     const l = decodeListing(listingAddr, getBase64Encoder().encode(info.value.data[0]) as Uint8Array);
     const sig = await send([await closeInstruction("close_stale_listing", program, address(account.address), l, s.rpc)], s.rpc, s.chain);
     status(`${T[lang].sent}: ${sig}`);
@@ -487,14 +516,14 @@ async function mine(disc: Uint8Array, offset: number, who: string) {
       ],
     })
     .send()
-    .then((r) => r.map((x) => ({ pubkey: x.pubkey, data: getBase64Encoder().encode(x.account.data[0]) as Uint8Array })));
+    .then((r) => r.filter((x) => isAddress(x.pubkey)).map((x) => ({ pubkey: x.pubkey, data: getBase64Encoder().encode(x.account.data[0]) as Uint8Array })));
 }
 
 /** A row with a label and one action button; the action sends a transaction, then `after` reloads. */
-function actionRow(list: HTMLElement, html: string, label: string, action: () => Promise<Ix[]>, after: () => void, disabled = false) {
+function actionRow(list: HTMLElement, parts: Part[], label: string, action: () => Promise<Ix[]>, after: () => void, disabled = false) {
   const row = document.createElement("div");
   row.className = "row";
-  row.innerHTML = `<div>${html}</div>`;
+  row.append(el("div", ...parts));
   const b = document.createElement("button");
   b.textContent = label;
   b.disabled = disabled;
@@ -525,12 +554,12 @@ async function loadOffers() {
   try {
     const t = T[lang];
     const offers = (await mine(OFFER_DISC, OFFER_BIDDER, account.address)).map((r) => decodeOffer(r.pubkey, r.data));
-    list.innerHTML = "";
+    list.replaceChildren();
     if (!offers.length) { list.textContent = t.noOffers; return; }
     for (const o of offers) {
       const left = o.quantity - o.filled;
       const what = o.kind === 3 ? t.family : t.itemOffer;
-      actionRow(list, `<b>${t.offer} #${o.id}</b> · ${what}<br>${sol(o.price)} ${t.each} · ${left} ${t.left} · ${t.held}: ${sol(o.price * BigInt(left))}`,
+      actionRow(list, [el("b", `${t.offer} #${o.id}`), ` · ${what}`, br(), `${sol(o.price)} ${t.each} · ${left} ${t.left} · ${t.held}: ${sol(o.price * BigInt(left))}`],
         t.cancelOffer, async () => [cancelOfferInstruction(address(s.program), o)], loadOffers);
     }
   } catch (e) {
@@ -557,14 +586,13 @@ function swapRow(list: HTMLElement, sw: Swap, reload: () => void) {
   const now = BigInt(Math.floor(Date.now() / 1000));
   const side = me === sw.offerer ? t.youOffered : me === sw.lister ? t.offeredToYou : "";
   const state = sw.state === SWAP_ENDED ? t.ended : now >= sw.expiresAt ? t.expired : `${t.expires} ${when(sw.expiresAt)}`;
-  const html = `<b>${t.swap} #${sw.id}</b>${side ? ` · ${side}` : ""} · ${state}<br>${sw.items.length} ${t.items}` +
-    (sw.solOnTop ? ` ${t.plus} ${sol(sw.solOnTop)}` : "") + ` → <code title="${sw.listedAsset}">${short(sw.listedAsset)}</code>` +
-    `<br><code title="${sw.address}">${short(sw.address)}</code>`;
+  const parts: Part[] = [el("b", `${t.swap} #${sw.id}`), `${side ? ` · ${side}` : ""} · ${state}`, br(),
+    `${sw.items.length} ${t.items}${sw.solOnTop ? ` ${t.plus} ${sol(sw.solOnTop)}` : ""} → `, addr(sw.listedAsset), br(), addr(sw.address)];
   const a = swapAction(sw, me);
-  const row = actionRow(list, html, a?.label ?? t.notYet, async () => {
+  const row = actionRow(list, parts, a?.label ?? t.notYet, async () => {
     // Read it again: the offer may have changed since the list was loaded (another batch went out, or it ended).
     const info = await createSolanaRpc(s.rpc).getAccountInfo(sw.address, { encoding: "base64" }).send();
-    if (!info.value) throw new Error(t.notSwap);
+    if (!info.value || info.value.owner !== s.program) throw new Error(t.notSwap);
     const fresh = decodeSwap(sw.address, getBase64Encoder().encode(info.value.data[0]) as Uint8Array);
     if (fresh.id !== sw.id) throw new Error(t.notSwap);
     const now2 = swapAction(fresh, me);
@@ -580,9 +608,9 @@ function swapRow(list: HTMLElement, sw: Swap, reload: () => void) {
   // holds up the others (stage 5 re-check).
   if (sw.state === SWAP_ENDED && me) {
     for (const i of pendingItems(sw)) {
-      actionRow(list, `<small>&nbsp;&nbsp;#${i + 1} <code title="${sw.items[i]}">${short(sw.items[i])}</code></small>`, t.one, async () => {
+      actionRow(list, [el("small", `\u00a0\u00a0#${i + 1} `, addr(sw.items[i]))], t.one, async () => {
         const info = await createSolanaRpc(s.rpc).getAccountInfo(sw.address, { encoding: "base64" }).send();
-        if (!info.value) throw new Error(t.notSwap);
+        if (!info.value || info.value.owner !== s.program) throw new Error(t.notSwap);
         const fresh = decodeSwap(sw.address, getBase64Encoder().encode(info.value.data[0]) as Uint8Array);
         if (fresh.id !== sw.id) throw new Error(t.notSwap);
         return [...swapBudget(), await swapExitInstruction(s.rpc, address(s.program), address(me), fresh, true, [i])];
@@ -604,9 +632,9 @@ async function loadSwaps() {
     const swaps: Swap[] = [];
     let unreadable = 0;
     for (const r of raw) { try { swaps.push(decodeSwap(r.pubkey, r.data)); } catch { unreadable++; } }
-    list.innerHTML = "";
+    list.replaceChildren();
     if (!swaps.length && !unreadable) { list.textContent = T[lang].noSwaps; return; }
-    for (const sw of swaps) swapRow(list, sw, loadSwaps);
+    for (const sw of swaps) { try { swapRow(list, sw, loadSwaps); } catch { unreadable++; } }
     if (unreadable) { const p = document.createElement("p"); p.className = "bad"; p.textContent = T[lang].unreadable; list.appendChild(p); }
   } catch (e) {
     list.textContent = `${T[lang].failed}: ${(e as Error).message}`;
@@ -624,7 +652,7 @@ async function findSwap() {
     if (!d || info.value!.owner !== s.program || !SWAP_DISC.every((b, i) => d[i] === b)) throw new Error(T[lang].notSwap);
     let sw: Swap;
     try { sw = decodeSwap(addr, d); } catch { throw new Error(T[lang].unreadable); }
-    out.innerHTML = "";
+    out.replaceChildren();
     swapRow(out, sw, () => void findSwap());
   } catch (e) {
     out.textContent = "";
@@ -658,7 +686,7 @@ function render() {
   $("l-swap-addr").textContent = t.swapAddr;
   $("find").textContent = t.find;
   const box = $("wallets");
-  box.innerHTML = "";
+  box.replaceChildren();
   if (account) {
     box.textContent = `${t.connected}: ${account.address}`;
     return;

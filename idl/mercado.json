@@ -623,8 +623,7 @@
         {
           "name": "collection",
           "docs": [
-            "item itself, so an item moved to another collection, or out of every collection, can still be released",
-            "(stage 5 re-check); unused for an item in no collection or one that is gone."
+            "buy also checks the item is still in it; stage 5 final re-check)."
           ],
           "writable": true
         },

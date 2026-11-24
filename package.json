@@ -1,6 +1,6 @@
 {
   "name": "mercado-recovery",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "MERCADO MIGORY recovery tool: cancel your listings and offers, close stale listings and end swap offers without mercado.migory.com.",
   "type": "module",
