@@ -31,7 +31,10 @@ an RPC node returns is shown as plain text, never as page markup, and every addr
 
 1. Download `mercado-recovery-<version>.html` from a published release, and check its SHA-256 against the
    release notes.
-2. Open the file in a browser that has your wallet extension.
+2. Open the file in a browser that has your wallet extension. Browsers don't let extensions into pages opened from
+   your own computer unless you allow it: in Chrome (and Brave, Edge), open `chrome://extensions`, click **Details**
+   on your wallet (Phantom, Solflare or Backpack) and turn on **Allow access to file URLs**. Without it the page
+   can't see your wallet. (Found in the timed exit drill, 25 November 2026.)
 3. Pick the network. Mainnet's program address is not in this version: it will be written into the release made
    for the mainnet launch (and its SHA-256 published), so nobody has to type or trust a pasted address. Until then
    the Mainnet choice has an empty program field.
@@ -77,6 +80,13 @@ fee at most 0.005 SOL); every other account and role must still match exactly. `
 transactions changed in each of these ways. Tested on devnet the same day with a wallet that adds a priority fee: an
 offer cancel and a listing cancel both confirmed (1.4.0 refused both), the priority fee paid
 (`program/evidence/devnet-recovery-1.4.1-priority.json` in the Mercado program repository). Use 1.4.1, not 1.4.0.
+
+## Exit drill
+
+25 November 2026, devnet, with 1.4.1: one person cleared four wallets using only this page (6 listings, 4 SOL
+offers, 4 swap offers and their 8 frozen items, 14 items in all) in about 12 minutes; afterwards nothing was open or
+frozen and every wallet's SOL had come back less network fees (`program/evidence/exit-drill-2026-11-25.json` in the
+Mercado program repository).
 
 ## Tested
 
