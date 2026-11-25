@@ -42,7 +42,8 @@ import { checkSigned, COMPUTE_BUDGET, type Ix } from "./check";
 const CORE = address("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
 const SYSTEM = address("11111111111111111111111111111111");
 const NETWORKS: Record<string, { rpc: string; chain: string; program: string }> = {
-  mainnet: { rpc: "https://api.mainnet-beta.solana.com", chain: "solana:mainnet", program: "" }, // filled in at mainnet launch
+  // Written in at the mainnet launch (25 Nov 2026): deployed from the verified build e6650f0c…4254, the same address as devnet.
+  mainnet: { rpc: "https://api.mainnet-beta.solana.com", chain: "solana:mainnet", program: "FjS73fLCiuyub4FNRfP7ztKdXBcaBDM6ai2CQdhZUGBP" },
   devnet: { rpc: "https://api.devnet.solana.com", chain: "solana:devnet", program: idl.address },
   localnet: { rpc: "http://127.0.0.1:8899", chain: "solana:localnet", program: idl.address },
 };

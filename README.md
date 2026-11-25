@@ -35,9 +35,9 @@ an RPC node returns is shown as plain text, never as page markup, and every addr
    your own computer unless you allow it: in Chrome (and Brave, Edge), open `chrome://extensions`, click **Details**
    on your wallet (Phantom, Solflare or Backpack) and turn on **Allow access to file URLs**. Without it the page
    can't see your wallet. (Found in the timed exit drill, 25 November 2026.)
-3. Pick the network. Mainnet's program address is not in this version: it will be written into the release made
-   for the mainnet launch (and its SHA-256 published), so nobody has to type or trust a pasted address. Until then
-   the Mainnet choice has an empty program field.
+3. Pick the network. Mainnet is chosen by default, with Mercado's mainnet program address written in
+   (`FjS73fLCiuyub4FNRfP7ztKdXBcaBDM6ai2CQdhZUGBP`, the same address as on devnet), so nobody has to type or trust a
+   pasted address. Version 1.5.0 is the first with it; earlier versions have an empty mainnet program field.
 4. Connect your wallet. Your listings, your offers and the swap offers made by or to you appear, each with the
    step you can take now.
 5. To finish someone else's expired or ended swap offer, paste its address under **Finish a swap offer**.
