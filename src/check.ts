@@ -6,6 +6,12 @@ import { AccountRole, address, getAddressDecoder, getBase58Decoder, type Address
 
 export type Ix = { programAddress: Address; accounts: { address: Address; role: AccountRole }[]; data: Uint8Array };
 export const COMPUTE_BUDGET = address("ComputeBudget111111111111111111111111111111");
+/**
+ * Lighthouse: Phantom adds its assertion instructions to mainnet transactions after simulating them (not on devnet).
+ * Immutable on mainnet (no upgrade authority, checked 27 Nov 2026); it can only fail a transaction or write its own
+ * memory accounts. Allowed below only with new, unsigned accounts of its own.
+ */
+export const LIGHTHOUSE = address("L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95");
 const dec = getAddressDecoder();
 const b58 = getBase58Decoder();
 
@@ -68,7 +74,9 @@ export function checkSigned(tx: Uint8Array, payer: string, blockhash: string, bu
   if (m.keys[0] !== payer) fail("another fee payer");
   if (m.blockhash !== blockhash) fail("another blockhash");
   const expected = built.filter((i) => i.programAddress !== COMPUTE_BUDGET);
-  const ours = m.ixs.filter((i) => i.program !== COMPUTE_BUDGET);
+  const ours = m.ixs.filter((i) => i.program !== COMPUTE_BUDGET && i.program !== LIGHTHOUSE);
+  const guards = m.ixs.filter((i) => i.program === LIGHTHOUSE);
+  if (guards.length > 8) fail("too many Lighthouse instructions");
   if (expected.length !== 1 || ours.length !== 1) fail("instruction count");
   const [want, got] = [expected[0], ours[0]];
   if (got.program !== want.programAddress) fail("another program");
@@ -88,17 +96,23 @@ export function checkSigned(tx: Uint8Array, payer: string, blockhash: string, bu
   // program's address, read-only. It is allowed only then; the instructions themselves are checked below (final
   // re-check, A: a priority fee within the cap must never block a cancel).
   if (m.ixs.some((i) => i.program === COMPUTE_BUDGET)) use(COMPUTE_BUDGET, false, false);
-  if (m.keys.length !== role.size) fail("other accounts in the message");
+  if (guards.length) use(LIGHTHOUSE, false, false);
+  // Accounts only Lighthouse names (its memory accounts, what it asserts on): new to the message, never a signer. Every
+  // account of the trade keeps exactly its role, so a guard can't make one writable.
+  const guardOnly = new Set<string>();
+  for (const g of guards) for (const k of g.accounts) if (!role.has(m.keys[k])) guardOnly.add(m.keys[k]);
+  if (m.keys.length !== role.size + guardOnly.size) fail("other accounts in the message");
   m.keys.forEach((key, k) => {
-    const r = role.get(key);
-    if (!r) fail(`unexpected account ${key}`);
     const signer = k < m.signers;
     const writable = signer ? k < m.signers - m.roSigned : k < m.keys.length - m.roUnsigned;
+    if (guardOnly.has(key)) { if (signer) fail(`Lighthouse signer ${key}`); return; }
+    const r = role.get(key);
+    if (!r) fail(`unexpected account ${key}`);
     if (r!.s !== signer || r!.w !== writable) fail(`role of ${key}`);
   });
   const budget = m.ixs.filter((i) => i.program === COMPUTE_BUDGET);
   const seen = new Set<number>();
-  let limit = 200_000n + 3_000n * BigInt(budget.length), price = 0n;
+  let limit = 200_000n * BigInt(1 + guards.length) + 3_000n * BigInt(budget.length), price = 0n;
   for (const b of budget) {
     if (b.accounts.length || seen.has(b.data[0])) fail("compute budget");
     seen.add(b.data[0]);

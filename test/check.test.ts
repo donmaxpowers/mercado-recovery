@@ -5,7 +5,7 @@ import {
   AccountRole, appendTransactionMessageInstructions, compileTransaction, createTransactionMessage, getAddressDecoder,
   getTransactionEncoder, pipe, setTransactionMessageFeePayer, setTransactionMessageLifetimeUsingBlockhash, type Address,
 } from "@solana/kit";
-import { checkSigned, COMPUTE_BUDGET, type Ix } from "../src/check";
+import { checkSigned, COMPUTE_BUDGET, LIGHTHOUSE, type Ix } from "../src/check";
 
 const key = (n: number) => getAddressDecoder().decode(new Uint8Array(32).fill(n)) as Address;
 const payer = key(7), program = key(9), offer = key(11), config = key(13);
@@ -48,4 +48,13 @@ refused("same, with a priority fee", wire([price(1_000n), asWritable]), [cancel]
 const extra = { ...cancel, accounts: [...cancel.accounts, { address: key(99), role: AccountRole.READONLY }] };
 refused("an extra account", wire([extra]), [cancel], /other accounts/);
 refused("other data", wire([{ ...cancel, data: Uint8Array.from([9]) }]), [cancel], /instruction data/);
+
+// Phantom on mainnet adds Lighthouse assertion instructions (27 Nov 2026, found at the mainnet launch).
+const memory = key(31);
+const guard = (accounts: Ix["accounts"]): Ix => ({ programAddress: LIGHTHOUSE, data: Uint8Array.from([4, 1, 2]), accounts });
+ok("Phantom adds Lighthouse guards (reads the trade's accounts, writes its own memory)", wire([cancel, guard([
+  { address: offer, role: AccountRole.READONLY }, { address: memory, role: AccountRole.WRITABLE }, { address: payer, role: AccountRole.WRITABLE_SIGNER }])]), [cancel]);
+refused("a guard that makes a read-only trade account writable", wire([cancel, guard([{ address: config, role: AccountRole.WRITABLE }])]), [cancel], /role of/);
+refused("a guard that adds a signer", wire([cancel, guard([{ address: memory, role: AccountRole.READONLY_SIGNER }])]), [cancel], /signer/);
+refused("a look-alike program", wire([cancel, { ...guard([]), programAddress: key(33) }]), [cancel], /instruction count|unexpected account/);
 console.log("all passed");
