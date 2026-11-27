@@ -76,7 +76,10 @@ export function checkSigned(tx: Uint8Array, payer: string, blockhash: string, bu
   const expected = built.filter((i) => i.programAddress !== COMPUTE_BUDGET);
   const ours = m.ixs.filter((i) => i.program !== COMPUTE_BUDGET && i.program !== LIGHTHOUSE);
   const guards = m.ixs.filter((i) => i.program === LIGHTHOUSE);
-  if (guards.length > 8) fail("too many Lighthouse instructions");
+  // Phantom adds one guard per account it watches, so a bigger step can carry a dozen or more (27 Nov 2026: a swap
+  // accept on the website got more than 8). The count is only a sanity bound; the rules below keep the trade's
+  // accounts and roles exact.
+  if (guards.length > 48) fail("too many Lighthouse instructions");
   if (expected.length !== 1 || ours.length !== 1) fail("instruction count");
   const [want, got] = [expected[0], ours[0]];
   if (got.program !== want.programAddress) fail("another program");
@@ -113,6 +116,7 @@ export function checkSigned(tx: Uint8Array, payer: string, blockhash: string, bu
   const budget = m.ixs.filter((i) => i.program === COMPUTE_BUDGET);
   const seen = new Set<number>();
   let limit = 200_000n * BigInt(1 + guards.length) + 3_000n * BigInt(budget.length), price = 0n;
+  if (limit > 1_400_000n) limit = 1_400_000n; // the runtime never gives a transaction more
   for (const b of budget) {
     if (b.accounts.length || seen.has(b.data[0])) fail("compute budget");
     seen.add(b.data[0]);
@@ -120,6 +124,8 @@ export function checkSigned(tx: Uint8Array, payer: string, blockhash: string, bu
     if (b.data[0] === 1 && b.data.length === 5) { if (v.getUint32(1, true) > 256 * 1024) fail("heap"); }
     else if (b.data[0] === 2 && b.data.length === 5) { limit = BigInt(v.getUint32(1, true)); if (limit > 1_400_000n) fail("compute units"); }
     else if (b.data[0] === 3 && b.data.length === 9) price = v.getBigUint64(1, true);
+    // A loaded-account-data limit only makes a transaction stricter (as the website allows): 1 byte to 64 MiB.
+    else if (b.data[0] === 4 && b.data.length === 5) { const n = v.getUint32(1, true); if (n === 0 || n > 64 * 1024 * 1024) fail("loaded-data limit"); }
     else fail("unknown compute budget instruction");
   }
   if ((limit * price + 999_999n) / 1_000_000n > MAX_PRIORITY_LAMPORTS) fail("priority fee above 0.005 SOL");

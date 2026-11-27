@@ -57,4 +57,14 @@ ok("Phantom adds Lighthouse guards (reads the trade's accounts, writes its own m
 refused("a guard that makes a read-only trade account writable", wire([cancel, guard([{ address: config, role: AccountRole.WRITABLE }])]), [cancel], /role of/);
 refused("a guard that adds a signer", wire([cancel, guard([{ address: memory, role: AccountRole.READONLY_SIGNER }])]), [cancel], /signer/);
 refused("a look-alike program", wire([cancel, { ...guard([]), programAddress: key(33) }]), [cancel], /instruction count|unexpected account/);
+// v1.5.2: bigger steps carry more guards (a swap accept got more than 8 on 27 Nov 2026), up to 48.
+const many = (n: number) => Array.from({ length: n }, (_, i) => guard([{ address: offer, role: AccountRole.READONLY }, { address: key(100 + i), role: AccountRole.WRITABLE }]));
+ok("20 Lighthouse guards", wire([cancel, ...many(20)]), [cancel]);
+refused("49 Lighthouse guards", wire([cancel, ...many(49)]), [cancel], /too many Lighthouse/);
+// With many guards and the wallet's price but no unit limit, the default is capped at the runtime's 1,400,000 units.
+ok("20 guards and a priority fee, no unit limit", wire([price(3_000_000n), cancel, ...many(20)]), [cancel]);
+// A loaded-data limit only makes a transaction stricter: allowed from 1 byte to 64 MiB.
+ok("wallet adds a loaded-data limit", wire([budget(4, 3n * 1024n * 1024n, 4), cancel]), [cancel]);
+refused("a loaded-data limit of 0", wire([budget(4, 0n, 4), cancel]), [cancel], /loaded-data/);
+refused("an unknown compute budget instruction", wire([budget(5, 1n, 4), cancel]), [cancel], /unknown compute budget/);
 console.log("all passed");

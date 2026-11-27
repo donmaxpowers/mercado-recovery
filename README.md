@@ -38,8 +38,9 @@ an RPC node returns is shown as plain text, never as page markup, and every addr
 3. Pick the network. Mainnet is chosen by default, with Mercado's mainnet program address written in
    (`FjS73fLCiuyub4FNRfP7ztKdXBcaBDM6ai2CQdhZUGBP`, the same address as on devnet), so nobody has to type or trust a
    pasted address. Version 1.5.0 is the first with it; earlier versions have an empty mainnet program field.
-   Use 1.5.1 or later on mainnet: Phantom adds Lighthouse safety instructions to mainnet transactions, which 1.5.0
-   refused (found at the mainnet launch, 27 November 2026).
+   Use 1.5.2 or later on mainnet: Phantom adds Lighthouse safety instructions to mainnet transactions, which 1.5.0
+   refused (found at the mainnet launch, 27 November 2026), and on bigger steps it can add more than the 8 that 1.5.1
+   allowed.
 4. Connect your wallet. Your listings, your offers and the swap offers made by or to you appear, each with the
    step you can take now.
 5. To finish someone else's expired or ended swap offer, paste its address under **Finish a swap offer**.
